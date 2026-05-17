@@ -1,29 +1,31 @@
 seed: 0
 device: cuda
 experiment:
-  name: baseline_rayleigh_only_cifar10
-  out_dir: runs/baseline_rayleigh_only_cifar10
+  name: djscc_wit_awgn_snr10_cifar10
+  out_dir: runs/djscc_wit_awgn_snr10_cifar10
 wandb:
   enabled: true
   project: dg-djscc
   entity: null
   mode: online
   tags:
-  - baseline
   - djscc_wit
   - single_source
-  - rayleigh
+  - awgn
   - cifar10
+  - reproduction
   log_images_every_epochs: 10
   num_image_samples: 8
 data:
   root: null
-  batch_size: 128
+  batch_size: 64
   num_workers: 2
   augment: true
 model:
-  name: baseline
+  name: chunbaobao
   cr: 0.1667
+  cr_convention: complex
+  P: 1.0
 channels:
 - name: awgn
 - name: rayleigh
@@ -34,24 +36,25 @@ channels:
 algorithm:
   name: djscc_wit
   mode: single_source
-  train_channel: rayleigh
+  train_channel: awgn
+  train_snr_db: 10.0
 train:
   epochs: 200
-  lr: 0.0001
-  weight_decay: 0.0
+  lr: 0.001
+  weight_decay: 0.0005
   optimizer: adam
-  snr_strategy: uniform
+  snr_strategy: fixed
   snr_db_fixed: 10.0
   snr_db_range:
-  - 0.0
-  - 20.0
+  - 10.0
+  - 10.0
   log_every: 50
   ckpt_every_epochs: 10
 eval:
   snr_db_grid:
-  - 0
-  - 5
-  - 10
-  - 15
-  - 20
+  - 1
+  - 4
+  - 7
+  - 13
+  - 19
   cross_channel: true

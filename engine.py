@@ -18,7 +18,7 @@ from tqdm import tqdm
 from algorithms import BaseAlgorithm, build_algorithm
 from channels import build_channels
 from data import get_loaders
-from models import DJSCC
+from models import build_model
 from utils import AverageMeter, load_ckpt, ms_ssim, psnr, save_ckpt, set_seed
 from utils.wandb_logger import WandbLogger
 
@@ -39,7 +39,7 @@ def build_runtime(cfg):
         num_workers=cfg["data"]["num_workers"],
         augment=cfg["data"]["augment"],
     )
-    model = DJSCC(cr=cfg["model"]["cr"]).to(device)
+    model = build_model(cfg).to(device)
     channels = {name: ch.to(device)
                 for name, ch in build_channels(cfg["channels"]).items()}
     return model, channels, train_loader, test_loader, device
@@ -124,7 +124,7 @@ def _run_epoch(algo: BaseAlgorithm, loader, cfg, device, epoch,
     pbar = tqdm(loader, desc=f"epoch {epoch}", leave=False)
     for it, (x, _) in enumerate(pbar):
         x = x.to(device, non_blocking=True)
-        snr_db = _sample_snr(cfg)
+        snr_db = algo.override_snr_db(_sample_snr(cfg))
 
         loss, logs = algo.train_step(x, snr_db)
 
@@ -156,7 +156,9 @@ def run_train(cfg, logger: WandbLogger):
     ood = [n for n in channels if n not in in_domain]
 
     print(f"Algorithm: {algo.name}")
-    print(f"Model: DJSCC, c_out={model.c_out}, CR={model.cr:.4f}")
+    cr_val = getattr(model, "cr", None)
+    cr_str = f"{cr_val:.4f}" if isinstance(cr_val, float) else "n/a"
+    print(f"Model: {model.__class__.__name__}, c_out={model.c_out}, CR={cr_str}")
     print(f"Train channels: {', '.join(in_domain)}")
     print(f"Eval channels : {', '.join(channels.keys())}")
     if ood:

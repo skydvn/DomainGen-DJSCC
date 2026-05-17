@@ -1,27 +1,39 @@
 """
 Algorithm registry.
 
+Each algorithm is a *method*: how the per-channel loss is computed.
+**Training scope** (one channel vs. many) is independent and chosen via
+``algorithm.mode`` in the config.
+
+Algorithms shipped
+------------------
+- ``djscc_wit`` — Deep JSCC for Wireless Image Transmission
+  (Bourtsoulatze et al., 2019). MSE forward; mode-agnostic.
+- ``dg_djscc``  — alias of ``djscc_wit`` with ``mode='multi_source'`` as the
+  default. Reads as the Basic Domain-Generalized DJSCC algorithm directly.
+
 Adding a new algorithm
 ----------------------
-1. Create algorithms/my_method.py with a BaseAlgorithm subclass.
-2. Import it here and add to ALGORITHMS under the desired config name.
-3. Set `algorithm.name: my_method` in a YAML config; pass any algorithm-
-   specific knobs under `algorithm.*`.
+1. Create algorithms/my_method.py with a subclass of :class:`BaseAlgorithm`.
+   Implement only ``compute_per_channel_loss(x, name, channel, snr_db)``.
+2. Import and register it here.
+3. In a config: ``algorithm.name: my_method``. Optionally set
+   ``algorithm.mode`` and any method-specific knobs under ``algorithm.*``.
 
-Engine and main do not need to change.
+The same algorithm automatically works in both single-source and multi-source
+modes — the base class handles the loop and loss aggregation.
 """
 from __future__ import annotations
 
 from typing import Dict, Type
 
 from .base import BaseAlgorithm
-from .dg_djscc import DGDJSCC
-from .single_source import SingleSource
+from .djscc_wit import DGDJSCC, DJSCC_WIT
 
 
 ALGORITHMS: Dict[str, Type[BaseAlgorithm]] = {
-    "dg_djscc": DGDJSCC,
-    "single_source": SingleSource,
+    "djscc_wit": DJSCC_WIT,
+    "dg_djscc":  DGDJSCC,
 }
 
 

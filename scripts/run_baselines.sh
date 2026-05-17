@@ -21,6 +21,7 @@ declare -a CONFIGS=(
   "configs/baseline_awgn_only.yaml"
   "configs/baseline_rayleigh_only.yaml"
   "configs/baseline_rician_only.yaml"
+  "configs/djscc_wit_awgn_snr10.yaml"
   "configs/dg_djscc_cifar10.yaml"
 )
 
