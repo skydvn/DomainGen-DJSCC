@@ -1,0 +1,54 @@
+# Basic Domain-Generalized DJSCC on CIFAR-10
+# Algorithm reference: Basic Domain-Generalized DJSCC
+seed: 0
+device: cuda   # or cpu
+
+experiment:
+  name: dg_djscc_cifar10
+  out_dir: runs/dg_djscc_cifar10
+
+wandb:
+  enabled: true
+  project: dg-djscc
+  entity: null        # set to your W&B username/team, or leave null
+  mode: online        # online | offline | disabled
+  tags: [dg, djscc, cifar10]
+  log_images_every_epochs: 10
+  num_image_samples: 8
+
+data:
+  root: ./data_cifar
+  batch_size: 128
+  num_workers: 2
+  augment: true
+
+model:
+  cr: 0.1667     # k/n = 1/6  -> c_out = round(0.1667 * 3072 / 64) = 8 channels
+
+# K = 3 channel domains, all with E[|h|^2] = 1
+channels:
+  - { name: awgn }
+  - { name: rayleigh, per_symbol: false }
+  - { name: rician,   per_symbol: false, k_factor_db: 4.0 }
+
+algorithm:
+  name: dg_djscc          # see algorithms/__init__.py for the registry
+  train_channels: all     # 'all' | name | [list of names]
+
+train:
+  epochs: 200
+  lr: 1.0e-4
+  weight_decay: 0.0
+  optimizer: adam
+  # Training SNR strategy: 'fixed' or 'uniform' (sample SNR per iteration)
+  snr_strategy: uniform
+  snr_db_fixed: 10.0
+  snr_db_range: [0.0, 20.0]
+  log_every: 50
+  ckpt_every_epochs: 10
+
+eval:
+  # SNRs (in dB) to sweep at test time, per channel domain.
+  snr_db_grid: [0, 5, 10, 15, 20]
+  # If true, evaluate on each channel separately AND on a uniform mixture.
+  cross_channel: true

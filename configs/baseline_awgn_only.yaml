@@ -1,0 +1,49 @@
+# Single-source baseline: trained on AWGN only, evaluated on all channels.
+seed: 0
+device: cuda
+
+experiment:
+  name: baseline_awgn_only_cifar10
+  out_dir: runs/baseline_awgn_only_cifar10
+
+wandb:
+  enabled: true
+  project: dg-djscc
+  entity: null
+  mode: online
+  tags: [baseline, single_source, awgn, cifar10]
+  log_images_every_epochs: 10
+  num_image_samples: 8
+
+data:
+  root: ./data_cifar
+  batch_size: 128
+  num_workers: 2
+  augment: true
+
+model:
+  cr: 0.1667
+
+channels:
+  - { name: awgn }
+  - { name: rayleigh, per_symbol: false }
+  - { name: rician,   per_symbol: false, k_factor_db: 4.0 }
+
+algorithm:
+  name: single_source
+  train_channel: awgn
+
+train:
+  epochs: 200
+  lr: 1.0e-4
+  weight_decay: 0.0
+  optimizer: adam
+  snr_strategy: uniform
+  snr_db_fixed: 10.0
+  snr_db_range: [0.0, 20.0]
+  log_every: 50
+  ckpt_every_epochs: 10
+
+eval:
+  snr_db_grid: [0, 5, 10, 15, 20]
+  cross_channel: true
