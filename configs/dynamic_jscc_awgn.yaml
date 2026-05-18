@@ -1,0 +1,81 @@
+# Dynamic JSCC (Yang & Kim, ICASSP 2022).
+# Reference: https://github.com/mingyuyng/Dynamic_JSCC
+#
+# Algorithm: dynamic_jscc (single-source by default)  |  Backbone: dynamic_jscc
+# Trained on AWGN with uniform SNR sampling, plus a channel-usage regularizer
+# that pushes the policy network toward fewer active feature groups.
+#
+# Mapping to the repo's flags:
+#   --SNR_MIN 0
+#   --SNR_MAX 20
+#   --lambda_reward 2e-3
+#   --C_channel C * L            (transmit channel count == G_total * L)
+#   --G_n / --G_s                 (non-selective / selective group counts)
+#
+# Evaluation runs on every configured channel; the model was trained on AWGN
+# so Rayleigh/Rician are OOD.
+seed: 0
+device: cuda
+
+experiment:
+  name: dynamic_jscc_awgn_cifar10
+  out_dir: runs/dynamic_jscc_awgn_cifar10
+
+wandb:
+  enabled: true
+  project: dg-djscc
+  entity: null
+  mode: online
+  tags: [dynamic_jscc, single_source, awgn, cifar10, reproduction]
+  log_images_every_epochs: 10
+  num_image_samples: 8
+
+data:
+  root: null
+  batch_size: 128
+  num_workers: 2
+  augment: true
+
+model:
+  name: dynamic_jscc
+  ngf: 32
+  g_s: 8                 # number of selective groups
+  g_n: 2                 # number of always-on groups
+  L:   4                 # features per group  (must be even)
+  P: 1.0
+  # Max real values transmitted per image (32x32 CIFAR-10, latent 8x8):
+  #   (g_s + g_n) * L * 8 * 8 = 10 * 4 * 64 = 2560
+  # Max CR (real-value convention) = 2560 / (3 * 32 * 32) ~ 0.833
+  # Min CR (g_n=2 always active)   =  512 / 3072         ~ 0.167
+
+channels:
+  - { name: awgn }
+  - { name: rayleigh, per_symbol: false }
+  - { name: rician,   per_symbol: false, k_factor_db: 4.0 }
+
+algorithm:
+  name: dynamic_jscc
+  mode: single_source
+  train_channel: awgn
+  # No `train_snr_db` => engine's snr_strategy.uniform is used (paper default).
+  lambda_reward: 2.0e-3
+  tau_init:  5.0
+  tau_final: 0.5
+  anneal_epochs: 100
+  warmup_epochs: 5       # epochs where ALL groups are forced on (policy frozen)
+  hard: true             # straight-through Gumbel-Softmax
+
+train:
+  epochs: 200
+  lr: 1.0e-4
+  weight_decay: 0.0
+  optimizer: adam
+  snr_strategy: uniform
+  snr_db_fixed: 10.0
+  snr_db_range: [0.0, 20.0]
+  log_every: 50
+  ckpt_every_epochs: 10
+
+eval:
+  snr_db_grid: [0, 5, 10, 15, 20]
+  cross_channel: true

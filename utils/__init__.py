@@ -25,11 +25,25 @@ def psnr(x_hat: torch.Tensor, x: torch.Tensor, max_val: float = 1.0) -> torch.Te
 
 
 try:
-    from pytorch_msssim import ms_ssim as _ms_ssim
+    from pytorch_msssim import ms_ssim as _ms_ssim, ssim as _ssim
+
+    # MS-SSIM downsamples the input 4 times (5 scales) with an 11x11 Gaussian
+    # window, so the input must be at least (11 - 1) * 2**4 + 1 = 161 pixels
+    # on each side. CIFAR-10 (32x32) is way below that, so MS-SSIM would
+    # silently return NaN for the whole eval. Fall back to single-scale SSIM
+    # when the image is too small.
+    _MS_SSIM_MIN_HW = 161
 
     @torch.no_grad()
     def ms_ssim(x_hat: torch.Tensor, x: torch.Tensor) -> torch.Tensor:
-        return _ms_ssim(x_hat.clamp(0, 1), x, data_range=1.0, size_average=False)
+        """Per-image MS-SSIM (or single-scale SSIM if the image is too small)."""
+        H, W = x.shape[-2], x.shape[-1]
+        x_hat_c = x_hat.clamp(0, 1)
+        if min(H, W) >= _MS_SSIM_MIN_HW:
+            return _ms_ssim(x_hat_c, x, data_range=1.0, size_average=False)
+        # Single-scale SSIM with the default 11x11 window works as long as
+        # min(H, W) >= 11; 32x32 CIFAR-10 satisfies that.
+        return _ssim(x_hat_c, x, data_range=1.0, size_average=False)
 
 except ImportError:  # pragma: no cover
     @torch.no_grad()

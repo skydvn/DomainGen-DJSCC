@@ -27,11 +27,14 @@ import torch.nn as nn
 
 from .baseline import DJSCC as BaselineDJSCC
 from .chunbaobao import ChunbaobaoDJSCC
-
+from .swin_djscc import SwinJSCC
+from .dynamic_jscc import DynamicJSCC
 
 MODELS: dict = {
     "baseline":  BaselineDJSCC,
     "chunbaobao": ChunbaobaoDJSCC,
+    "swin_jscc": SwinJSCC,
+    "dynamic_jscc": DynamicJSCC,
 }
 
 

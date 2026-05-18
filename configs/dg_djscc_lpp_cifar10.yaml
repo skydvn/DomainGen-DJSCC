@@ -1,0 +1,69 @@
+# DG-DJSCC-L++ on CIFAR-10
+#
+# - Algorithm: djscc_lpp  (SNR fed as side info into encoder + decoder)
+# - Mode: multi_source    (train on AWGN+Rayleigh+Rician)
+# - Backbone: swin_jscc   (Swin Transformer from aprilbian/deepjscc-lplusplus)
+#
+# Equivalent: `name: dg_djscc_lpp`, which sets mode=multi_source by default.
+#
+# Notes
+# -----
+# Swin backbone defaults target 256x256. For CIFAR-10 (32x32) we use the
+# `cifar_small` preset which keeps the 4-stage Swin but trims dims/depths so
+# the latent is 2x2 (tight but workable for benchmarking).
+seed: 0
+device: cuda
+
+experiment:
+  name: dg_djscc_lpp_cifar10
+  out_dir: runs/dg_djscc_lpp_cifar10
+
+wandb:
+  enabled: true
+  project: dg-djscc
+  entity: null
+  mode: online
+  tags: [dg, djscc_lpp, swin, cifar10]
+  log_images_every_epochs: 10
+  num_image_samples: 8
+
+data:
+  root: null
+  batch_size: 64
+  num_workers: 2
+  augment: true
+
+model:
+  name: swin_jscc
+  img_size: 32
+  in_chans: 3
+  patch_size: 2
+  preset: cifar_small         # 4-stage Swin sized for CIFAR-10
+  cr: 0.1667                  # complex symbols / real source pixels
+  n_adapt_embed: 8
+  max_bw: 1
+  P: 1.0
+
+channels:
+  - { name: awgn }
+  - { name: rayleigh, per_symbol: false }
+  - { name: rician,   per_symbol: false, k_factor_db: 4.0 }
+
+algorithm:
+  name: dg_djscc_lpp          # alias: mode=multi_source by default
+  train_channels: all
+
+train:
+  epochs: 200
+  lr: 1.0e-4
+  weight_decay: 0.0
+  optimizer: adam
+  snr_strategy: uniform       # SNR sampled per step; side-info uses it
+  snr_db_range: [0.0, 20.0]
+  snr_db_fixed: 10.0
+  log_every: 50
+  ckpt_every_epochs: 10
+
+eval:
+  snr_db_grid: [0, 5, 10, 15, 20]
+  cross_channel: true

@@ -1,0 +1,60 @@
+# DJSCC-L++ paper-like single-source reproduction.
+# Single channel (AWGN), fixed SNR, side-info conditioning via Swin backbone.
+seed: 0
+device: cuda
+
+experiment:
+  name: djscc_lpp_awgn_snr10_cifar10
+  out_dir: runs/djscc_lpp_awgn_snr10_cifar10
+
+wandb:
+  enabled: true
+  project: dg-djscc
+  entity: null
+  mode: online
+  tags: [djscc_lpp, single_source, swin, awgn, cifar10, reproduction]
+  log_images_every_epochs: 10
+  num_image_samples: 8
+
+data:
+  root: null
+  batch_size: 64
+  num_workers: 2
+  augment: true
+
+model:
+  name: swin_jscc
+  img_size: 32
+  in_chans: 3
+  patch_size: 2
+  preset: cifar_small
+  cr: 0.1667
+  n_adapt_embed: 8
+  max_bw: 1
+  P: 1.0
+
+channels:
+  - { name: awgn }
+  - { name: rayleigh, per_symbol: false }
+  - { name: rician,   per_symbol: false, k_factor_db: 4.0 }
+
+algorithm:
+  name: djscc_lpp
+  mode: single_source
+  train_channel: awgn
+  train_snr_db: 10.0          # fixed; engine's snr sampler ignored
+
+train:
+  epochs: 200
+  lr: 1.0e-4
+  weight_decay: 0.0
+  optimizer: adam
+  snr_strategy: fixed
+  snr_db_fixed: 10.0
+  snr_db_range: [10.0, 10.0]
+  log_every: 50
+  ckpt_every_epochs: 10
+
+eval:
+  snr_db_grid: [1, 4, 7, 10, 13, 19]
+  cross_channel: true

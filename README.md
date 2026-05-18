@@ -58,6 +58,9 @@ python main.py --config configs/dg_djscc_cifar10.yaml --mode train_eval
 # DJSCC-WIT reproduction (single-source on AWGN, fixed SNR=10 dB)
 python main.py --config configs/djscc_wit_awgn_snr10.yaml --mode train_eval
 
+# DJSCC-LPP
+python main.py --config configs/djscc_lpp_awgn_snr10.yaml --mode train_eval
+
 # Single-source baselines (one channel, uniform-SNR training)
 python main.py --config configs/baseline_awgn_only.yaml --mode train_eval
 python main.py --config configs/baseline_rayleigh_only.yaml --mode train_eval
@@ -66,6 +69,11 @@ python main.py --config configs/baseline_rician_only.yaml --mode train_eval
 # Run them all in sequence
 bash scripts/run_baselines.sh
 ```
+
+## Baselines
+1. DeepJSCC‑L++: "Robust and Bandwidth‑Adaptive Wireless Image Transmission”, IEEE Globecom 2023, by Chenghong Bian, Yulin Shao, and Deniz Gündüz.
+2. DeepJSCC-WIT: "Deep Joint Source-Channel Coding for Wireless Image Transmission", in IEEE Transactions on Cognitive Communications and Networking, E. Bourtsoulatze, D. Burth Kurka and D. Gündüz.
+3. 
 
 ## Datasets
 

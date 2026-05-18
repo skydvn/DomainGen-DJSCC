@@ -29,11 +29,15 @@ from typing import Dict, Type
 
 from .base import BaseAlgorithm
 from .djscc_wit import DGDJSCC, DJSCC_WIT
+from .djscc_lpp import DJSCC_LPP, DG_DJSCC_LPP
+from .dynamic_jscc import DynamicJSCC
 
 
 ALGORITHMS: Dict[str, Type[BaseAlgorithm]] = {
     "djscc_wit": DJSCC_WIT,
     "dg_djscc":  DGDJSCC,
+    "djscc_lpp": DJSCC_LPP,
+    "dynamic_jscc": DynamicJSCC,
 }
 
 
